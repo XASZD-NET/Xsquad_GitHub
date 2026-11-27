@@ -1,0 +1,62 @@
+CREATE TABLE IF NOT EXISTS users (
+ id BIGSERIAL PRIMARY KEY,
+ username VARCHAR(39) UNIQUE NOT NULL,
+ email VARCHAR(254) UNIQUE NOT NULL,
+ password_hash TEXT NOT NULL,
+ display_name VARCHAR(80) NOT NULL DEFAULT '',
+ bio VARCHAR(300) NOT NULL DEFAULT '',
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS repositories (
+ id BIGSERIAL PRIMARY KEY,
+ owner_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ name VARCHAR(100) NOT NULL,
+ description VARCHAR(350) NOT NULL DEFAULT '',
+ visibility VARCHAR(10) NOT NULL DEFAULT 'public' CHECK (visibility IN ('public','private')),
+ default_branch VARCHAR(100) NOT NULL DEFAULT 'main',
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ UNIQUE(owner_id,name)
+);
+CREATE TABLE IF NOT EXISTS files (
+ id BIGSERIAL PRIMARY KEY,
+ repo_id BIGINT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+ path TEXT NOT NULL,
+ kind VARCHAR(8) NOT NULL CHECK(kind IN ('file','dir')),
+ content TEXT NOT NULL DEFAULT '',
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ UNIQUE(repo_id,path)
+);
+CREATE TABLE IF NOT EXISTS commits (
+ id BIGSERIAL PRIMARY KEY,
+ repo_id BIGINT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+ author_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+ message VARCHAR(200) NOT NULL,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS file_versions (
+ id BIGSERIAL PRIMARY KEY,
+ file_id BIGINT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+ commit_id BIGINT REFERENCES commits(id) ON DELETE SET NULL,
+ content TEXT NOT NULL,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS stars (
+ user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ repo_id BIGINT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ PRIMARY KEY(user_id,repo_id)
+);
+CREATE TABLE IF NOT EXISTS issues (
+ id BIGSERIAL PRIMARY KEY,
+ repo_id BIGINT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+ author_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+ title VARCHAR(200) NOT NULL,
+ body TEXT NOT NULL DEFAULT '',
+ state VARCHAR(10) NOT NULL DEFAULT 'open' CHECK(state IN ('open','closed')),
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_repos_owner ON repositories(owner_id);
+CREATE INDEX IF NOT EXISTS idx_files_repo ON files(repo_id);
+CREATE INDEX IF NOT EXISTS idx_commits_repo ON commits(repo_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_issues_repo ON issues(repo_id,created_at DESC);
