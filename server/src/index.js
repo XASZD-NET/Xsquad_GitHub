@@ -126,4 +126,3 @@ app.use((err,req,res,next)=>{console.error(err);if(res.headersSent)return next(e
 
 async function start(){if(!process.env.DATABASE_URL)console.warn('DATABASE_URL missing: API database routes will not work until configured.');else await pool.query(schema);app.listen(PORT,'0.0.0.0',()=>console.log(`Xsquad GitHub listening on ${PORT}`))}
 start().catch(err=>{console.error('Startup failed:',err);process.exit(1)});
-                      
