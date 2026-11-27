@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: xsquad-github-v2
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: xsquad-github-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+databases:
+  - name: xsquad-github-db
+    databaseName: xsquad_github
+    user: xsquad_github
